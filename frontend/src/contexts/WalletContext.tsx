@@ -1,129 +1,154 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-// Types for NFT and Ethereum provider
-interface NFT {
-	id?: string;
-	name?: string;
-	description?: string;
-	image_url?: string;
-	external_link?: string;
-	asset_contract?: {
-		address: string;
-		name: string;
-	};
-	token_id?: string;
-}
-
-interface EthereumProvider {
-	request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
-	isMetaMask?: boolean;
-}
+type OwnedNFT = {
+  contract: { address: string; name?: string; symbol?: string };
+  tokenId: string;
+  title?: string;
+  description?: string;
+  media?: { gateway?: string; raw?: string }[];
+  tokenUri?: { gateway?: string; raw?: string };
+};
 
 interface WalletContextType {
-	isConnected: boolean;
-	walletAddress: string;
-	nfts: NFT[];
-	connectWallet: () => Promise<void>;
-	disconnectWallet: () => void;
+  isConnected: boolean;
+  walletAddress: string;
+  chainId?: string;
+  nfts: OwnedNFT[];
+  connectWallet: () => Promise<void>;
+  disconnectWallet: () => void;
+  refreshNFTs: () => Promise<void>;
+  loading: boolean;
+  error?: string;
 }
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
-
 export const useWallet = () => {
-	const context = useContext(WalletContext);
-	if (!context) {
-		throw new Error('useWallet must be used within a WalletProvider');
-	}
-	return context;
+  const ctx = useContext(WalletContext);
+  if (!ctx) throw new Error('useWallet must be used within a WalletProvider');
+  return ctx;
 };
 
-// Add type for window.ethereum
+// window.ethereum type
 declare global {
-	interface Window {
-		ethereum?: EthereumProvider;
-	}
+  interface Window { ethereum?: any }
 }
 
-interface WalletProviderProps {
-	children: ReactNode;
+interface WalletProviderProps { children: ReactNode }
+
+// ------- Config -------
+// Sepolia Alchemy NFT API (v2)
+const ALCHEMY_KEY = import.meta.env.VITE_ALCHEMY_KEY; //
+const ALCHEMY_BASE = `https://eth-sepolia.g.alchemy.com/nft/v2/${ALCHEMY_KEY}`;
+
+async function fetchSepoliaNFTs(owner: string): Promise<OwnedNFT[]> {
+  const url = `${ALCHEMY_BASE}/getNFTs?owner=${owner}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Alchemy error: ${res.status}`);
+  const data = await res.json();
+  return data.ownedNfts ?? []; // sadece array döndür
 }
+
+
 
 export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
-	const [isConnected, setIsConnected] = useState(false);
-	const [walletAddress, setWalletAddress] = useState('');
-	const [nfts, setNfts] = useState<NFT[]>([]);
+  const [isConnected, setIsConnected] = useState(false);
+  const [walletAddress, setWalletAddress] = useState('');
+  const [chainId, setChainId] = useState<string>();
+  const [nfts, setNfts] = useState<OwnedNFT[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>();
 
-	// Check if wallet was previously connected on page load
-	useEffect(() => {
-		const checkConnection = async () => {
-			if (typeof window.ethereum !== 'undefined') {
-				try {
-					const accounts = await window.ethereum.request({ method: 'eth_accounts' }) as string[];
-					if (accounts.length > 0) {
-						setIsConnected(true);
-						setWalletAddress(accounts[0]);
-						// Fetch NFTs
-						const response = await fetch(`https://api.opensea.io/api/v1/assets?owner=${accounts[0]}`);
-						const data = await response.json();
-						setNfts(data.assets || []);
-					}
-				} catch (error) {
-					console.log('No previous wallet connection found');
-				}
-			}
-		};
+  // helper
+  const getAccounts = async () => {
+    const accs: string[] = await window.ethereum.request({ method: 'eth_accounts' });
+    return accs?.[0];
+  };
 
-		checkConnection();
-	}, []);
+  const refreshNFTs = async () => {
+    if (!walletAddress) return;
+    setLoading(true);
+    setError(undefined);
+    try {
+      // Sadece Sepolia’da çek (0xaa36a7)
+      if (chainId?.toLowerCase() !== '0xaa36a7') {
+        setNfts([]);
+        setError('Lütfen Sepolia ağına geçin.');
+      } else {
+        const items = await fetchSepoliaNFTs(walletAddress);
+        setNfts(items);
+      }
+    } catch (e: any) {
+      setError(e?.message ?? 'NFT fetch failed');
+      setNfts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-	const connectWallet = async () => {
-		if (typeof window.ethereum !== 'undefined') {
-			try {
-				const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' }) as string[];
-				setIsConnected(true);
-				setWalletAddress(accounts[0]);
-				// Fetch NFTs from wallet
-				try {
-					const response = await fetch(`https://api.opensea.io/api/v1/assets?owner=${accounts[0]}`);
-					const data = await response.json();
-					const walletNfts = data.assets || [];
-					setNfts(walletNfts);
-				} catch (nftError) {
-					console.log('Could not fetch NFTs, but wallet connected successfully');
-					setNfts([]);
-				}
-			} catch (error: unknown) {
-				// Only show error if user rejected the connection or there was a real error
-				const ethError = error as { code?: number; message?: string };
-				if (ethError.code === 4001) {
-					console.log('User rejected the connection');
-				} else {
-					console.error('Wallet connection error:', error);
-					alert('Wallet connection failed!');
-				}
-			}
-		} else {
-			alert('MetaMask not found!');
-		}
-	};
+  // ilk yükleme: önceki bağlantıyı kontrol et
+  useEffect(() => {
+    (async () => {
+      if (!window.ethereum) return;
+      const addr = await getAccounts();
+      if (addr) {
+        setIsConnected(true);
+        setWalletAddress(addr);
+      }
+      const currentChainId: string = await window.ethereum.request({ method: 'eth_chainId' });
+      setChainId(currentChainId);
+    })();
 
-	const disconnectWallet = () => {
-		setIsConnected(false);
-		setWalletAddress('');
-		setNfts([]);
-	};
+    if (window.ethereum) {
+      const onAccountsChanged = (accs: string[]) => {
+        const a = accs?.[0];
+        setWalletAddress(a ?? '');
+        setIsConnected(!!a);
+        setNfts([]);
+        setError(undefined);
+      };
+      const onChainChanged = (cid: string) => {
+        setChainId(cid);
+        setNfts([]);
+        setError(undefined);
+      };
+      window.ethereum.on?.('accountsChanged', onAccountsChanged);
+      window.ethereum.on?.('chainChanged', onChainChanged);
+      return () => {
+        window.ethereum?.removeListener?.('accountsChanged', onAccountsChanged);
+        window.ethereum?.removeListener?.('chainChanged', onChainChanged);
+      };
+    }
+  }, []);
 
-	const value: WalletContextType = {
-		isConnected,
-		walletAddress,
-		nfts,
-		connectWallet,
-		disconnectWallet,
-	};
+  // adres/ağ değişince NFT’leri yenile
+  useEffect(() => { refreshNFTs(); }, [walletAddress, chainId]);
 
-	return (
-		<WalletContext.Provider value={value}>
-			{children}
-		</WalletContext.Provider>
-	);
+  const connectWallet = async () => {
+    if (!window.ethereum) return alert('MetaMask not found!');
+    try {
+      const accounts: string[] = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      setIsConnected(true);
+      setWalletAddress(accounts[0]);
+      const cid: string = await window.ethereum.request({ method: 'eth_chainId' });
+      setChainId(cid);
+    } catch {
+      alert('Wallet connection failed!');
+    }
+  };
+
+  const disconnectWallet = () => {
+    setIsConnected(false);
+    setWalletAddress('');
+    setNfts([]);
+    setError(undefined);
+  };
+
+  return (
+    <WalletContext.Provider value={{
+      isConnected, walletAddress, chainId, nfts,
+      connectWallet, disconnectWallet, refreshNFTs, loading, error
+    }}>
+      {children}
+    </WalletContext.Provider>
+  );
 };

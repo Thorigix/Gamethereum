@@ -21,6 +21,17 @@ const MyNFTs = () => {
   const uniqueGames = mockGames.length;
   const legendaryCount = mockNFTs.filter(nft => nft.rarity === 'legendary').length;
 
+  // sayfanın üst kısmına ekle (component içinde, render'dan önce olabilir)
+const getAlchemyImage = (nft: any) =>
+  nft?.media?.[0]?.gateway ||
+  nft?.tokenUri?.gateway ||
+  nft?.media?.[0]?.raw ||
+  "";
+
+const getDisplayName = (nft: any) =>
+  nft?.title || `${nft?.contract?.name ?? "NFT"} #${nft?.tokenId}`;
+
+
   return (
     <div className="min-h-screen bg-gradient-hero">
       <Navigation />
@@ -90,19 +101,32 @@ const MyNFTs = () => {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
-                {walletNfts.map((nft) => (
-                  <div key={nft.id || nft.token_id} className="bg-gradient-card rounded-lg p-3 border border-border/50 hover:border-primary/50 transition-all duration-300">
-                    <img
-                      src={nft.image_url || nft.image_preview_url}
-                      alt={nft.name}
-                      className="w-full h-32 object-cover rounded mb-2"
-                    />
-                    <div className="text-sm font-semibold text-foreground truncate">{nft.name}</div>
-                    <div className="text-xs text-muted-foreground truncate">{nft.collection?.name}</div>
-                  </div>
-                ))}
-              </div>
+<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
+  {walletNfts.map((nft: any, i: number) => {
+    const key = `${nft?.contract?.address}-${nft?.tokenId}-${i}`;
+    const img = getAlchemyImage(nft);
+    const name = getDisplayName(nft);
+    const collection = nft?.contract?.name || nft?.contract?.address;
+
+    return (
+      <div
+        key={key}
+        className="bg-gradient-card rounded-lg p-3 border border-border/50 hover:border-primary/50 transition-all duration-300"
+      >
+        <div className="w-full h-32 rounded mb-2 overflow-hidden bg-muted/40 flex items-center justify-center">
+          {img ? (
+            <img src={img} alt={name} className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-xs text-muted-foreground">No Image</span>
+          )}
+        </div>
+        <div className="text-sm font-semibold text-foreground truncate">{name}</div>
+        <div className="text-xs text-muted-foreground truncate">{collection}</div>
+      </div>
+    );
+  })}
+</div>
+
             )}
           </div>
         )}        {/* Empty State */}
