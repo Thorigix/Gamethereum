@@ -3,6 +3,9 @@ import { Navigation } from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { useWallet } from '@/contexts/WalletContext';
 import { Trophy, Play, RotateCcw, Wallet } from 'lucide-react';
+import { toast } from '@/components/ui/sonner';
+import { createWalletClient, custom } from 'viem';
+import { sepolia } from 'viem/chains';
 
 interface GameObject {
 	x: number;
@@ -37,13 +40,49 @@ const DinoGame = () => {
 
 	const [velocity, setVelocity] = useState(0);
 
+	// AchievementNFT contract (Sepolia)
+	const ACHIEVEMENT_NFT_ADDRESS = '0x91d9745d8452c6720f4d4874c6eb133e39f3b869' as const;
+	const ACHIEVEMENT_NFT_ABI = [
+		{
+			type: 'function',
+			name: 'setAchievementURI',
+			stateMutability: 'nonpayable',
+			inputs: [
+				{ name: 'achievementId', type: 'uint256' },
+				{ name: 'uri', type: 'string' },
+			],
+			outputs: [],
+		},
+		{
+			type: 'function',
+			name: 'mintAchievement',
+			stateMutability: 'nonpayable',
+			inputs: [
+				{ name: 'to', type: 'address' },
+				{ name: 'achievementId', type: 'uint256' },
+			],
+			outputs: [
+				{ name: 'tokenId', type: 'uint256' },
+			],
+		},
+		{
+			type: 'function',
+			name: 'owner',
+			stateMutability: 'view',
+			inputs: [],
+			outputs: [{ name: '', type: 'address' }],
+		},
+	] as const;
+
+	const [minting, setMinting] = useState(false);
+
 	// Load images
 	useEffect(() => {
 		const dinoImage = new Image();
 		const cactusImage = new Image();
 
 		// Public klasöründeki resimler
-		dinoImage.src = '/dino.png';
+		dinoImage.src = '/ouch.png';
 		cactusImage.src = '/cactus.png';
 
 		dinoImage.onload = () => {
@@ -233,6 +272,111 @@ const DinoGame = () => {
 		setGameState('ready');
 	};
 
+	// Upload a file/blob to Catbox and get a public URL
+	const uploadFileToCatbox = async (filename: string, data: Blob): Promise<string> => {
+		const form = new FormData();
+		form.append('reqtype', 'fileupload');
+		const file = new File([data], filename, { type: data.type || 'application/octet-stream' });
+		form.append('fileToUpload', file);
+		// Use dev proxy to bypass CORS: vite proxies /catbox/* -> https://catbox.moe/*
+		const res = await fetch('/catbox/user/api.php', { method: 'POST', body: form });
+		const text = await res.text();
+		if (!res.ok) throw new Error(`Catbox upload failed: ${res.status} ${text}`);
+		if (!/^https?:\/\//.test(text)) throw new Error(`Catbox unexpected response: ${text}`);
+		return text.trim();
+	};
+
+	const ensureSepolia = async () => {
+		// 0xaa36a7 = Sepolia chainId
+		const target = '0xaa36a7';
+		try {
+			const current = await window.ethereum.request({ method: 'eth_chainId' });
+			if (current?.toLowerCase() !== target) {
+				await window.ethereum.request({
+					method: 'wallet_switchEthereumChain',
+					params: [{ chainId: target }],
+				});
+			}
+		} catch (e) {
+			// ignore, MetaMask will show error
+		}
+	};
+
+	const handleMint = async () => {
+		if (!isConnected || !walletAddress) {
+			toast.error('Connect wallet first');
+			return;
+		}
+		if (!window.ethereum) {
+			toast.error('No injected wallet found');
+			return;
+		}
+
+		setMinting(true);
+		try {
+			await ensureSepolia();
+			const client = createWalletClient({ chain: sepolia, transport: custom(window.ethereum) });
+			let [account] = await client.getAddresses();
+			if (!account) {
+				// fallback request if no account pulled yet
+				const accs: string[] = await window.ethereum.request({ method: 'eth_requestAccounts' });
+				account = accs?.[0] as `0x${string}`;
+			}
+			if (!account) throw new Error('No connected account found');
+
+			// Upload image & metadata to Catbox
+			toast('Uploading image to Catbox…');
+			const imgResp = await fetch('/ouch.png');
+			if (!imgResp.ok) throw new Error(`Failed to fetch /ouch.png: ${imgResp.status}`);
+			const imgBlob = await imgResp.blob();
+			const imgUrl = await uploadFileToCatbox('ouch.png', imgBlob);
+			toast.success('Image uploaded');
+
+			const achievementId = BigInt(Math.max(score, 1)); // use score as id (>=1)
+			const metadata = {
+				name: `Dino Score ${score}`,
+				description: 'Achievement for your Chrome Dino score',
+				image: imgUrl,
+				attributes: [
+					{ trait_type: 'game', value: 'chrome-dino' },
+					{ trait_type: 'score', value: score },
+				],
+			};
+			toast('Uploading metadata to Catbox…');
+			const metaBlob = new Blob([JSON.stringify(metadata)], { type: 'application/json' });
+			const tokenURI = await uploadFileToCatbox(`meta-sepolia-${achievementId}.json`, metaBlob);
+			toast.success('Metadata uploaded');
+
+			// 1) setAchievementURI (onlyOwner)
+			await client.writeContract({
+				chain: sepolia,
+				account,
+				address: ACHIEVEMENT_NFT_ADDRESS,
+				abi: ACHIEVEMENT_NFT_ABI,
+				functionName: 'setAchievementURI',
+				args: [achievementId, tokenURI],
+			});
+			toast.success('Achievement URI set');
+
+			// 2) mint to current player
+			await client.writeContract({
+				chain: sepolia,
+				account,
+				address: ACHIEVEMENT_NFT_ADDRESS,
+				abi: ACHIEVEMENT_NFT_ABI,
+				functionName: 'mintAchievement',
+				args: [walletAddress as `0x${string}`, achievementId],
+			});
+			toast.success('Mint transaction sent');
+		} catch (err: any) {
+			console.error(err);
+			const msg = err?.shortMessage || err?.message || 'Mint failed';
+			toast.error(msg);
+		} finally {
+			setMinting(false);
+		}
+	};
+
 	return (
 		<div className="min-h-screen bg-gradient-hero">
 			<Navigation />
@@ -309,10 +453,16 @@ const DinoGame = () => {
 									{score === highScore && score > 0 && (
 										<p className="mb-4 text-yellow-400">🏆 New High Score!</p>
 									)}
-									<Button onClick={resetGame} className="gap-2">
-										<RotateCcw className="h-4 w-4" />
-										Play Again
-									</Button>
+									<div className="flex items-center justify-center gap-3">
+										<Button onClick={resetGame} variant="secondary" className="gap-2">
+											<RotateCcw className="h-4 w-4" />
+											Play Again
+										</Button>
+										<Button onClick={handleMint} disabled={!isConnected || minting || score <= 0} className="gap-2">
+											<Trophy className="h-4 w-4" />
+											{minting ? 'Minting…' : 'Mint NFT'}
+										</Button>
+									</div>
 								</div>
 							</div>
 						)}
