@@ -26,6 +26,10 @@ export const Navigation: React.FC<NavigationProps> = ({ className }) => {
 
         {/* Navigation Links */}
         <div className="hidden md:flex items-center gap-4">
+          <Button variant="ghost" className="gap-2" onClick={() => window.location.href = '/'}>
+            <Trophy className="h-4 w-4" />
+            Ana Sayfa
+          </Button>
           <Button variant="ghost" className="gap-2">
             <Gamepad2 className="h-4 w-4" />
             NFT'lerim

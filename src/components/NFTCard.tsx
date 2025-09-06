@@ -19,12 +19,12 @@ export const NFTCard: React.FC<NFTCardProps> = ({ nft, className }) => {
   const rarity = rarityConfig[nft.rarity];
 
   return (
-    <div className={`group relative overflow-hidden rounded-xl bg-gradient-card border border-border/50 hover:border-primary/50 transition-all duration-300 hover:shadow-card hover:scale-105 ${className}`}>
+    <div className={`group relative overflow-hidden rounded-lg bg-gradient-card border border-border/50 hover:border-primary/50 transition-all duration-300 hover:shadow-card hover:scale-105 ${className}`}>
       {/* Rarity Glow Effect */}
       <div className={`absolute inset-0 ${rarity.glow} opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none`} />
       
       {/* NFT Image */}
-      <div className="relative aspect-square overflow-hidden">
+      <div className="relative aspect-square overflow-hidden h-48">
         <img
           src={nft.image}
           alt={nft.name}
@@ -47,17 +47,17 @@ export const NFTCard: React.FC<NFTCardProps> = ({ nft, className }) => {
       </div>
       
       {/* Content */}
-      <div className="p-4 space-y-3">
+      <div className="p-3 space-y-2">
         <div>
-          <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors">
+          <h3 className="font-semibold text-base text-foreground group-hover:text-primary transition-colors">
             {nft.name}
           </h3>
-          <p className="text-sm text-muted-foreground font-medium">
+          <p className="text-xs text-muted-foreground font-medium">
             {nft.game}
           </p>
         </div>
         
-        <p className="text-sm text-muted-foreground line-clamp-2">
+        <p className="text-xs text-muted-foreground line-clamp-2">
           {nft.description}
         </p>
         
