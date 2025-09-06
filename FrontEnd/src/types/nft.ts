@@ -4,7 +4,6 @@ export interface GameNFT {
   description: string;
   image: string;
   game: string;
-  gameIcon: string;
   rarity: "common" | "rare" | "epic" | "legendary";
   achievedAt: string;
   blockchain: string;

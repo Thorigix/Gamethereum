@@ -38,9 +38,6 @@ export const GameFilter: React.FC<GameFilterProps> = ({
           onClick={() => onGameSelect(game.id)}
           className="gap-2"
         >
-          <span role="img" aria-label={game.name}>
-            {game.icon}
-          </span>
           {game.name}
           <Badge variant="secondary" className="ml-1">
             {game.nftCount}

@@ -33,9 +33,6 @@ export const NFTCard: React.FC<NFTCardProps> = ({ nft, className }) => {
 
         {/* Game Icon Overlay */}
         <div className="absolute top-2 left-2 bg-gradient-card/90 backdrop-blur-sm rounded-md p-1 border border-primary/20">
-          <span className="text-sm" role="img" aria-label={nft.game}>
-            {nft.gameIcon}
-          </span>
         </div>
 
         {/* Rarity Badge */}
