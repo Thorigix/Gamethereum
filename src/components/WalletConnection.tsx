@@ -1,0 +1,75 @@
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Wallet, LogOut, Copy, Check } from 'lucide-react';
+
+interface WalletConnectionProps {
+  className?: string;
+}
+
+export const WalletConnection: React.FC<WalletConnectionProps> = ({ className }) => {
+  const [isConnected, setIsConnected] = useState(false);
+  const [walletAddress, setWalletAddress] = useState('');
+  const [isCopied, setIsCopied] = useState(false);
+
+  const connectWallet = async () => {
+    // Simulate wallet connection
+    setTimeout(() => {
+      setIsConnected(true);
+      setWalletAddress('0x1234...abcd');
+    }, 1000);
+  };
+
+  const disconnectWallet = () => {
+    setIsConnected(false);
+    setWalletAddress('');
+  };
+
+  const copyAddress = async () => {
+    await navigator.clipboard.writeText('0x1234567890abcdef1234567890abcdef12345678');
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
+  };
+
+  if (isConnected) {
+    return (
+      <div className={`flex items-center gap-2 ${className}`}>
+        <div className="flex items-center gap-2 bg-gradient-card rounded-lg p-2 border border-primary/20">
+          <Wallet className="h-4 w-4 text-primary" />
+          <span className="text-sm font-mono">{walletAddress}</span>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={copyAddress}
+            className="h-6 w-6 hover:bg-primary/10"
+          >
+            {isCopied ? (
+              <Check className="h-3 w-3 text-secondary" />
+            ) : (
+              <Copy className="h-3 w-3" />
+            )}
+          </Button>
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={disconnectWallet}
+          className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
+        >
+          <LogOut className="h-4 w-4" />
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <Button 
+      variant="wallet" 
+      size="lg" 
+      onClick={connectWallet}
+      className={className}
+    >
+      <Wallet className="h-5 w-5" />
+      Cüzdanı Bağla
+    </Button>
+  );
+};
