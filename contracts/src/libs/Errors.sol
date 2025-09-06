@@ -5,6 +5,7 @@ library Errors {
     error Unauthorized();
     error InvalidPrice();
     error InvalidQuantity();
+    error InvalidPayment();
     error NotListed();
     error AlreadySold();
     error TransferFailed();
