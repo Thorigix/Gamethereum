@@ -38,6 +38,10 @@ export const Navigation: React.FC<NavigationProps> = ({ className }) => {
             <Gamepad2 className="h-4 w-4" />
             My NFTs
           </Button>
+          <Button variant="ghost" className="gap-2" onClick={() => window.location.href = '/dino-game'}>
+            🦕
+            Dino Game
+          </Button>
         </div>
 
         {/* Wallet Connection */}
