@@ -1,0 +1,9 @@
+{
+  "name": "CS:GO Speedrun (<1m)",
+  "description": "Bir eli 1 dakikadan kısa sürede bitiren oyuncuya verilen başarı NFT'si.",
+  "image": "ipfs://QmdZXn5SDGhHKtVqLSTNXKgJqwtZ7PBUMocniaRrVHAh9K",
+  "attributes": [
+    {"trait_type": "Game", "value": "CS:GO"},
+    {"trait_type": "Achievement", "value": "Round under 1 min"}
+  ]
+}
