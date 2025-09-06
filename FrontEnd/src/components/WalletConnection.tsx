@@ -1,31 +1,18 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Wallet, LogOut, Copy, Check } from 'lucide-react';
+import { useWallet } from '@/contexts/WalletContext';
 
 interface WalletConnectionProps {
   className?: string;
 }
 
 export const WalletConnection: React.FC<WalletConnectionProps> = ({ className }) => {
-  const [isConnected, setIsConnected] = useState(false);
-  const [walletAddress, setWalletAddress] = useState('');
   const [isCopied, setIsCopied] = useState(false);
-
-  const connectWallet = async () => {
-    // Simulate wallet connection
-    setTimeout(() => {
-      setIsConnected(true);
-      setWalletAddress('0x1234...abcd');
-    }, 1000);
-  };
-
-  const disconnectWallet = () => {
-    setIsConnected(false);
-    setWalletAddress('');
-  };
+  const { isConnected, walletAddress, connectWallet, disconnectWallet } = useWallet();
 
   const copyAddress = async () => {
-    await navigator.clipboard.writeText('0x1234567890abcdef1234567890abcdef12345678');
+    await navigator.clipboard.writeText(walletAddress);
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2000);
   };
@@ -35,7 +22,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       <div className={`flex items-center gap-2 ${className}`}>
         <div className="flex items-center gap-2 bg-gradient-card rounded-lg p-2 border border-primary/20">
           <Wallet className="h-4 w-4 text-primary" />
-          <span className="text-sm font-mono">{walletAddress}</span>
+          <span className="text-sm font-mono">{walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}</span>
           <Button
             variant="ghost"
             size="icon"
