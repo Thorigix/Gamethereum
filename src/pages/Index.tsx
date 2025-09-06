@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigation } from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
-import { Trophy, Gamepad2, Sparkles, Shield, Zap, Star } from 'lucide-react';
+import { Trophy, Gamepad2, Sparkles, Shield, Zap, Star, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Index = () => {
@@ -43,9 +43,14 @@ const Index = () => {
               <Gamepad2 className="h-6 w-6" />
               NFT Koleksiyonumu Gör
             </Button>
-            <Button variant="neon" size="xl" className="gap-3">
-              <Shield className="h-5 w-5" />
-              Cüzdanı Bağla
+            <Button 
+              variant="secondary" 
+              size="xl" 
+              onClick={() => navigate('/platform')}
+              className="gap-3"
+            >
+              <Users className="h-5 w-5" />
+              Platformu Keşfet
             </Button>
           </div>
         </div>
@@ -148,6 +153,15 @@ const Index = () => {
               >
                 <Trophy className="h-6 w-6" />
                 Koleksiyonuma Git
+              </Button>
+              <Button 
+                variant="secondary" 
+                size="xl" 
+                onClick={() => navigate('/platform')}
+                className="gap-3"
+              >
+                <Users className="h-5 w-5" />
+                Platformu Keşfet
               </Button>
             </div>
           </div>

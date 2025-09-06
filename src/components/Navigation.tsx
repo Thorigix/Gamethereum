@@ -1,6 +1,6 @@
 import React from 'react';
 import { WalletConnection } from './WalletConnection';
-import { Trophy, Gamepad2 } from 'lucide-react';
+import { Trophy, Gamepad2, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface NavigationProps {
@@ -30,7 +30,11 @@ export const Navigation: React.FC<NavigationProps> = ({ className }) => {
             <Trophy className="h-4 w-4" />
             Ana Sayfa
           </Button>
-          <Button variant="ghost" className="gap-2">
+          <Button variant="ghost" className="gap-2" onClick={() => window.location.href = '/platform'}>
+            <Users className="h-4 w-4" />
+            Platform
+          </Button>
+          <Button variant="ghost" className="gap-2" onClick={() => window.location.href = '/my-nfts'}>
             <Gamepad2 className="h-4 w-4" />
             NFT'lerim
           </Button>

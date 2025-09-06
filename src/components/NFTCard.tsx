@@ -24,7 +24,7 @@ export const NFTCard: React.FC<NFTCardProps> = ({ nft, className }) => {
       <div className={`absolute inset-0 ${rarity.glow} opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none`} />
       
       {/* NFT Image */}
-      <div className="relative aspect-square overflow-hidden h-48">
+      <div className="relative aspect-square overflow-hidden h-32">
         <img
           src={nft.image}
           alt={nft.name}
@@ -32,15 +32,15 @@ export const NFTCard: React.FC<NFTCardProps> = ({ nft, className }) => {
         />
         
         {/* Game Icon Overlay */}
-        <div className="absolute top-3 left-3 bg-gradient-card/90 backdrop-blur-sm rounded-lg p-2 border border-primary/20">
-          <span className="text-lg" role="img" aria-label={nft.game}>
+        <div className="absolute top-2 left-2 bg-gradient-card/90 backdrop-blur-sm rounded-md p-1 border border-primary/20">
+          <span className="text-sm" role="img" aria-label={nft.game}>
             {nft.gameIcon}
           </span>
         </div>
         
         {/* Rarity Badge */}
-        <div className="absolute top-3 right-3">
-          <Badge className={`${rarity.color} ${rarity.glow} capitalize font-semibold`}>
+        <div className="absolute top-2 right-2">
+          <Badge className={`${rarity.color} ${rarity.glow} capitalize text-xs font-semibold px-2 py-1`}>
             {nft.rarity}
           </Badge>
         </div>
@@ -49,26 +49,18 @@ export const NFTCard: React.FC<NFTCardProps> = ({ nft, className }) => {
       {/* Content */}
       <div className="p-3 space-y-2">
         <div>
-          <h3 className="font-semibold text-base text-foreground group-hover:text-primary transition-colors">
+          <h3 className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors line-clamp-1">
             {nft.name}
           </h3>
-          <p className="text-xs text-muted-foreground font-medium">
+          <p className="text-xs text-muted-foreground font-medium line-clamp-1">
             {nft.game}
           </p>
         </div>
         
-        <p className="text-xs text-muted-foreground line-clamp-2">
-          {nft.description}
-        </p>
-        
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <div className="flex items-center gap-1">
             <Calendar className="h-3 w-3" />
-            {new Date(nft.achievedAt).toLocaleDateString()}
-          </div>
-          <div className="flex items-center gap-1">
-            <Shield className="h-3 w-3" />
-            {nft.blockchain}
+            <span className="truncate">{new Date(nft.achievedAt).toLocaleDateString()}</span>
           </div>
         </div>
         
