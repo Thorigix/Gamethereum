@@ -24,12 +24,12 @@ export const GameFilter: React.FC<GameFilterProps> = ({
         onClick={() => onGameSelect(null)}
         className="gap-2"
       >
-        Tüm Oyunlar
+        All Games
         <Badge variant="secondary" className="ml-1">
           {games.reduce((total, game) => total + game.nftCount, 0)}
         </Badge>
       </Button>
-      
+
       {games.map((game) => (
         <Button
           key={game.id}

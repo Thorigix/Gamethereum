@@ -62,14 +62,14 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   }
 
   return (
-    <Button 
-      variant="wallet" 
-      size="lg" 
+    <Button
+      variant="wallet"
+      size="lg"
       onClick={connectWallet}
       className={className}
     >
       <Wallet className="h-5 w-5" />
-      Cüzdanı Bağla
+      Connect Wallet
     </Button>
   );
 };

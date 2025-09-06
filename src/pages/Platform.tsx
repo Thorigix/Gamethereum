@@ -9,7 +9,7 @@ import { Users, TrendingUp, Eye, Star } from 'lucide-react';
 const generateUserNFTs = () => {
   const userNames = ['CryptoGamer', 'NFTHunter', 'GameMaster', 'PixelWarrior', 'LegendSeeker', 'ProGamer', 'AchievementKing'];
   const allNFTs = [];
-  
+
   userNames.forEach(userName => {
     mockNFTs.forEach((nft, index) => {
       allNFTs.push({
@@ -21,25 +21,25 @@ const generateUserNFTs = () => {
       });
     });
   });
-  
+
   return allNFTs.sort(() => Math.random() - 0.5);
 };
 
 const Platform = () => {
   const [selectedGame, setSelectedGame] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'newest' | 'popular' | 'trending'>('newest');
-  
+
   const allUserNFTs = useMemo(() => generateUserNFTs(), []);
-  
+
   const filteredNFTs = useMemo(() => {
     let filtered = allUserNFTs;
-    
+
     if (selectedGame) {
-      filtered = filtered.filter(nft => 
+      filtered = filtered.filter(nft =>
         mockGames.find(game => game.id === selectedGame)?.name === nft.game
       );
     }
-    
+
     // Sort NFTs
     switch (sortBy) {
       case 'popular':
@@ -58,18 +58,18 @@ const Platform = () => {
   return (
     <div className="min-h-screen bg-gradient-hero">
       <Navigation />
-      
+
       <div className="container mx-auto px-4 py-8">
         {/* Header Section */}
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-3 mb-4">
             <Users className="h-8 w-8 text-primary" />
             <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              NFT Platformu
+              NFT Platform
             </h1>
           </div>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Diğer oyuncuların NFT koleksiyonlarını keşfedin. En popüler başarımları görün ve gaming topluluğunun bir parçası olun.
+            Discover other players' NFT collections. View the most popular achievements and be part of the gaming community.
           </p>
         </div>
 
@@ -78,63 +78,60 @@ const Platform = () => {
           <div className="bg-gradient-card rounded-xl p-6 border border-primary/20 text-center hover:shadow-glow transition-all duration-300">
             <Users className="h-8 w-8 text-primary mx-auto mb-2" />
             <div className="text-2xl font-bold text-foreground">{uniqueOwners}</div>
-            <div className="text-muted-foreground">Aktif Oyuncu</div>
+            <div className="text-muted-foreground">Active Players</div>
           </div>
           <div className="bg-gradient-card rounded-xl p-6 border border-secondary/20 text-center hover:shadow-neon transition-all duration-300">
             <TrendingUp className="h-8 w-8 text-secondary mx-auto mb-2" />
             <div className="text-2xl font-bold text-foreground">{totalNFTs}</div>
-            <div className="text-muted-foreground">Platform NFT</div>
+            <div className="text-muted-foreground">Platform NFTs</div>
           </div>
           <div className="bg-gradient-card rounded-xl p-6 border border-accent/20 text-center hover:shadow-card transition-all duration-300">
             <Eye className="h-8 w-8 text-accent mx-auto mb-2" />
             <div className="text-2xl font-bold text-foreground">{totalViews.toLocaleString()}</div>
-            <div className="text-muted-foreground">Toplam Görüntüleme</div>
+            <div className="text-muted-foreground">Total Views</div>
           </div>
         </div>
 
         {/* Filters */}
         <div className="mb-8 space-y-6">
           <div>
-            <h2 className="text-xl font-semibold text-foreground mb-4">Oyunlara Göre Filtrele</h2>
+            <h2 className="text-xl font-semibold text-foreground mb-4">Filter by Games</h2>
             <GameFilter
               games={mockGames}
               selectedGame={selectedGame}
               onGameSelect={setSelectedGame}
             />
           </div>
-          
+
           <div>
-            <h2 className="text-xl font-semibold text-foreground mb-4">Sıralama</h2>
+            <h2 className="text-xl font-semibold text-foreground mb-4">Sort</h2>
             <div className="flex gap-3">
               <button
                 onClick={() => setSortBy('newest')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  sortBy === 'newest'
-                    ? 'bg-primary text-primary-foreground shadow-glow'
-                    : 'bg-gradient-card text-foreground hover:bg-primary/20'
-                }`}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${sortBy === 'newest'
+                  ? 'bg-primary text-primary-foreground shadow-glow'
+                  : 'bg-gradient-card text-foreground hover:bg-primary/20'
+                  }`}
               >
-                En Yeni
+                Newest
               </button>
               <button
                 onClick={() => setSortBy('popular')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  sortBy === 'popular'
-                    ? 'bg-primary text-primary-foreground shadow-glow'
-                    : 'bg-gradient-card text-foreground hover:bg-primary/20'
-                }`}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${sortBy === 'popular'
+                  ? 'bg-primary text-primary-foreground shadow-glow'
+                  : 'bg-gradient-card text-foreground hover:bg-primary/20'
+                  }`}
               >
-                En Popüler
+                Most Popular
               </button>
               <button
                 onClick={() => setSortBy('trending')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  sortBy === 'trending'
-                    ? 'bg-primary text-primary-foreground shadow-glow'
-                    : 'bg-gradient-card text-foreground hover:bg-primary/20'
-                }`}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${sortBy === 'trending'
+                  ? 'bg-primary text-primary-foreground shadow-glow'
+                  : 'bg-gradient-card text-foreground hover:bg-primary/20'
+                  }`}
               >
-                Trend
+                Trending
               </button>
             </div>
           </div>
@@ -170,10 +167,10 @@ const Platform = () => {
           <div className="text-center py-12">
             <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
             <h3 className="text-xl font-semibold text-muted-foreground mb-2">
-              Bu filtrelerde NFT bulunamadı
+              No NFTs found with these filters
             </h3>
             <p className="text-muted-foreground">
-              Farklı oyun filtreleri deneyerek daha fazla NFT keşfedin!
+              Try different game filters to discover more NFTs!
             </p>
           </div>
         )}

@@ -22,22 +22,22 @@ export const NFTCard: React.FC<NFTCardProps> = ({ nft, className }) => {
     <div className={`group relative overflow-hidden rounded-lg bg-gradient-card border border-border/50 hover:border-primary/50 transition-all duration-300 hover:shadow-card hover:scale-105 ${className}`}>
       {/* Rarity Glow Effect */}
       <div className={`absolute inset-0 ${rarity.glow} opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none`} />
-      
+
       {/* NFT Image */}
-      <div className="relative aspect-square overflow-hidden h-32">
+      <div className="relative aspect-square overflow-hidden">
         <img
           src={nft.image}
           alt={nft.name}
           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
         />
-        
+
         {/* Game Icon Overlay */}
         <div className="absolute top-2 left-2 bg-gradient-card/90 backdrop-blur-sm rounded-md p-1 border border-primary/20">
           <span className="text-sm" role="img" aria-label={nft.game}>
             {nft.gameIcon}
           </span>
         </div>
-        
+
         {/* Rarity Badge */}
         <div className="absolute top-2 right-2">
           <Badge className={`${rarity.color} ${rarity.glow} capitalize text-xs font-semibold px-2 py-1`}>
@@ -45,7 +45,7 @@ export const NFTCard: React.FC<NFTCardProps> = ({ nft, className }) => {
           </Badge>
         </div>
       </div>
-      
+
       {/* Content */}
       <div className="p-3 space-y-2">
         <div>
@@ -56,14 +56,14 @@ export const NFTCard: React.FC<NFTCardProps> = ({ nft, className }) => {
             {nft.game}
           </p>
         </div>
-        
+
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <div className="flex items-center gap-1">
             <Calendar className="h-3 w-3" />
             <span className="truncate">{new Date(nft.achievedAt).toLocaleDateString()}</span>
           </div>
         </div>
-        
+
         {/* Hover Effect */}
         <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-primary transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
       </div>

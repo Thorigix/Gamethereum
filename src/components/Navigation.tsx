@@ -14,11 +14,11 @@ export const Navigation: React.FC<NavigationProps> = ({ className }) => {
         {/* Logo */}
         <div className="flex items-center gap-3">
           <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-primary">
-            <Trophy className="h-6 w-6 text-white" />
+            <Gamepad2 className="h-6 w-6 text-white" />
           </div>
           <div>
             <h1 className="font-bold text-xl bg-gradient-primary bg-clip-text text-transparent">
-              GameNFT
+              Gamethereum
             </h1>
             <p className="text-xs text-muted-foreground">Achievement Showcase</p>
           </div>
@@ -28,7 +28,7 @@ export const Navigation: React.FC<NavigationProps> = ({ className }) => {
         <div className="hidden md:flex items-center gap-4">
           <Button variant="ghost" className="gap-2" onClick={() => window.location.href = '/'}>
             <Trophy className="h-4 w-4" />
-            Ana Sayfa
+            Home
           </Button>
           <Button variant="ghost" className="gap-2" onClick={() => window.location.href = '/platform'}>
             <Users className="h-4 w-4" />
@@ -36,7 +36,7 @@ export const Navigation: React.FC<NavigationProps> = ({ className }) => {
           </Button>
           <Button variant="ghost" className="gap-2" onClick={() => window.location.href = '/my-nfts'}>
             <Gamepad2 className="h-4 w-4" />
-            NFT'lerim
+            My NFTs
           </Button>
         </div>
 
