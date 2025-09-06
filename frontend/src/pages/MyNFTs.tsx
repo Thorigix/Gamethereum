@@ -78,7 +78,7 @@ const MyNFTs = () => {
         {/* Wallet NFTs Section */}
         {isConnected && (
           <div className="mt-12">
-            <h2 className="text-2xl font-bold text-foreground mb-6">NFTs from Your Wallet</h2>
+            <h2 className="text-2xl font-bold text-foreground mb-6 text-center">NFTs from Your Wallet</h2>
             {walletNfts.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16">
                 <Trophy className="h-16 w-16 text-muted-foreground mb-4 opacity-50" />
@@ -86,7 +86,7 @@ const MyNFTs = () => {
                   No NFTs found in your wallet
                 </h3>
                 <p className="text-muted-foreground text-center max-w-md">
-                  Connect your wallet and start collecting gaming achievements as NFTs!
+                  Start your collecting journey!
                 </p>
               </div>
             ) : (
