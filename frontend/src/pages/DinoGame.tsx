@@ -41,7 +41,7 @@ const DinoGame = () => {
 	const [velocity, setVelocity] = useState(0);
 
 	// AchievementNFT contract (Sepolia)
-	const ACHIEVEMENT_NFT_ADDRESS = '0x91d9745d8452c6720f4d4874c6eb133e39f3b869' as const;
+	const ACHIEVEMENT_NFT_ADDRESS = '0x28c21930d1394e330b3b5a7de73ecc5296d15e54' as const;
 	const ACHIEVEMENT_NFT_ABI = [
 		{
 			type: 'function',
@@ -60,6 +60,19 @@ const DinoGame = () => {
 			inputs: [
 				{ name: 'to', type: 'address' },
 				{ name: 'achievementId', type: 'uint256' },
+			],
+			outputs: [
+				{ name: 'tokenId', type: 'uint256' },
+			],
+		},
+		{
+			type: 'function',
+			name: 'mintAchievementWithURI',
+			stateMutability: 'nonpayable',
+			inputs: [
+				{ name: 'to', type: 'address' },
+				{ name: 'achievementId', type: 'uint256' },
+				{ name: 'uri', type: 'string' },
 			],
 			outputs: [
 				{ name: 'tokenId', type: 'uint256' },
@@ -347,25 +360,14 @@ const DinoGame = () => {
 			const tokenURI = await uploadFileToCatbox(`meta-sepolia-${achievementId}.json`, metaBlob);
 			toast.success('Metadata uploaded');
 
-			// 1) setAchievementURI (onlyOwner)
+			// Mint to current player with provided tokenURI (public)
 			await client.writeContract({
 				chain: sepolia,
 				account,
 				address: ACHIEVEMENT_NFT_ADDRESS,
 				abi: ACHIEVEMENT_NFT_ABI,
-				functionName: 'setAchievementURI',
-				args: [achievementId, tokenURI],
-			});
-			toast.success('Achievement URI set');
-
-			// 2) mint to current player
-			await client.writeContract({
-				chain: sepolia,
-				account,
-				address: ACHIEVEMENT_NFT_ADDRESS,
-				abi: ACHIEVEMENT_NFT_ABI,
-				functionName: 'mintAchievement',
-				args: [walletAddress as `0x${string}`, achievementId],
+				functionName: 'mintAchievementWithURI',
+				args: [walletAddress as `0x${string}`, achievementId, tokenURI],
 			});
 			toast.success('Mint transaction sent');
 		} catch (err: any) {

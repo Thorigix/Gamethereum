@@ -24,4 +24,14 @@ contract AchievementNFTTest is Test {
         assertEq(ach.ownerOf(tokenId), player);
         assertEq(ach.tokenURI(tokenId), "ipfs://QmDemoHash/1.json");
     }
+
+    function test_PublicMintWithURI() public {
+        // simulate a player calling from EOA
+        address playerEOA = address(0xCAFE);
+        vm.prank(playerEOA);
+        uint256 tokenId = ach.mintAchievementWithURI(player, 42, "ipfs://custom.hash/42.json");
+
+        assertEq(ach.ownerOf(tokenId), player);
+        assertEq(ach.tokenURI(tokenId), "ipfs://custom.hash/42.json");
+    }
 }

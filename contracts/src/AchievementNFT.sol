@@ -41,4 +41,19 @@ contract AchievementNFT is ERC721URIStorage, Ownable {
 
         emit AchievementMinted(to, tokenId, achievementId);
     }
+
+    /// @dev Anyone can mint with a custom tokenURI. Useful for user-generated metadata flows.
+    function mintAchievementWithURI(address to, uint256 achievementId, string calldata uri)
+        external
+        returns (uint256 tokenId)
+    {
+        require(to != address(0), "invalid to");
+        require(bytes(uri).length > 0, "empty uri");
+
+        tokenId = _nextTokenId++;
+        _safeMint(to, tokenId);
+        _setTokenURI(tokenId, uri);
+
+        emit AchievementMinted(to, tokenId, achievementId);
+    }
 }
