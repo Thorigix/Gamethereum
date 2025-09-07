@@ -3,33 +3,144 @@ import { Navigation } from '@/components/Navigation';
 import { NFTCard } from '@/components/NFTCard';
 import { GameFilter } from '@/components/GameFilter';
 import { mockNFTs, mockGames } from '@/data/mockNFTs';
-import { Trophy, Sparkles, Star, Gamepad2 } from 'lucide-react';
+import { Trophy, Sparkles, Star, Gamepad2, Trash2 } from 'lucide-react';
 import { useWallet } from '@/contexts/WalletContext';
+import { toast } from '@/components/ui/sonner';
+import { createWalletClient, custom } from 'viem';
+import { sepolia } from 'viem/chains';
 
 const MyNFTs = () => {
   const [selectedGame, setSelectedGame] = useState<string | null>(null);
   const { isConnected, nfts: walletNfts } = useWallet();
 
+  // Local state for mock NFTs to allow deleting/hiding
+  const [userNFTs, setUserNFTs] = useState(mockNFTs);
+  const [hiddenWalletKeys, setHiddenWalletKeys] = useState<Set<string>>(new Set());
+  const [burningKeys, setBurningKeys] = useState<Set<string>>(new Set());
+
   const filteredNFTs = useMemo(() => {
-    if (!selectedGame) return mockNFTs;
-    return mockNFTs.filter(nft =>
+    const source = userNFTs;
+    if (!selectedGame) return source;
+    return source.filter(nft =>
       mockGames.find(game => game.id === selectedGame)?.name === nft.game
     );
-  }, [selectedGame]);
+  }, [selectedGame, userNFTs]);
 
-  const totalNFTs = mockNFTs.length;
-  const uniqueGames = mockGames.length;
-  const legendaryCount = mockNFTs.filter(nft => nft.rarity === 'legendary').length;
+  const totalNFTs = userNFTs.length;
+  const uniqueGames = new Set(userNFTs.map(n => n.game)).size;
+  const legendaryCount = userNFTs.filter(nft => nft.rarity === 'legendary').length;
 
   // sayfanın üst kısmına ekle (component içinde, render'dan önce olabilir)
-const getAlchemyImage = (nft: any) =>
-  nft?.media?.[0]?.gateway ||
-  nft?.tokenUri?.gateway ||
-  nft?.media?.[0]?.raw ||
-  "";
+  const getAlchemyImage = (nft: any) =>
+    nft?.media?.[0]?.gateway ||
+    nft?.tokenUri?.gateway ||
+    nft?.media?.[0]?.raw ||
+    "";
 
-const getDisplayName = (nft: any) =>
-  nft?.title || `${nft?.contract?.name ?? "NFT"} #${nft?.tokenId}`;
+  const extractTokenId = (nft: any): unknown => {
+    if (!nft) return undefined;
+    if (nft.tokenId != null) return nft.tokenId;
+    if (nft.id?.tokenId != null) return nft.id.tokenId;
+    if (nft.id != null && typeof nft.id === 'string') return nft.id;
+    if (nft.token_id != null) return nft.token_id; // some APIs use snake_case
+    return undefined;
+  };
+
+  const getDisplayName = (nft: any) => {
+    const rawId = extractTokenId(nft);
+    const idStr = typeof rawId === 'string' ? rawId : (typeof rawId === 'number' || typeof rawId === 'bigint') ? String(rawId) : '?';
+    return nft?.title || `${nft?.contract?.name ?? "NFT"} #${idStr}`;
+  };
+
+  const handleDeleteMock = (id: string) => {
+    setUserNFTs(prev => prev.filter(n => n.id !== id));
+  };
+
+  // Burn by transferring to the dead address if contract doesn't expose burn
+  const DEAD_ADDRESS = '0x000000000000000000000000000000000000dEaD' as const;
+  const ERC721_ABI = [
+    {
+      type: 'function',
+      name: 'safeTransferFrom',
+      stateMutability: 'nonpayable',
+      inputs: [
+        { name: 'from', type: 'address' },
+        { name: 'to', type: 'address' },
+        { name: 'tokenId', type: 'uint256' },
+      ],
+      outputs: [],
+    },
+  ] as const;
+
+  const ensureSepolia = async () => {
+    const target = '0xaa36a7';
+    try {
+      const current = await window.ethereum.request({ method: 'eth_chainId' });
+      if (current?.toLowerCase() !== target) {
+        await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: target }] });
+      }
+    } catch {}
+  };
+
+  const parseTokenId = (id: unknown): bigint => {
+    if (typeof id === 'bigint') return id;
+    if (typeof id === 'number') {
+      if (!Number.isInteger(id)) throw new Error('tokenId is not an integer');
+      return BigInt(id);
+    }
+    if (typeof id === 'string') {
+      const s = id.trim();
+      if (!s) throw new Error('tokenId is empty');
+      // Hex with 0x prefix
+      if (/^0x[0-9a-fA-F]+$/.test(s)) return BigInt(s);
+      // Decimal
+      if (/^\d+$/.test(s)) return BigInt(s);
+      // Hex without 0x
+      if (/^[0-9a-fA-F]+$/.test(s)) return BigInt('0x' + s);
+      throw new Error(`Unrecognized tokenId format: ${s}`);
+    }
+    throw new Error('Unsupported tokenId type');
+  };
+
+  const handleBurnWalletNft = async (contractAddress: string, tokenIdValue: any, key: string) => {
+    if (!window.ethereum) return toast.error('No wallet available');
+    if (!isConnected) return toast.error('Connect your wallet');
+    const confirmed = window.confirm('This will permanently remove the NFT from your wallet by sending it to a burn address. This action cannot be undone. Continue?');
+    if (!confirmed) return;
+
+    try {
+      setBurningKeys(prev => new Set(prev).add(key));
+      await ensureSepolia();
+      const client = createWalletClient({ chain: sepolia, transport: custom(window.ethereum) });
+      let [account] = await client.getAddresses();
+      if (!account) {
+        const accs: string[] = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        account = accs?.[0] as `0x${string}`;
+      }
+      if (!account) throw new Error('No connected account');
+      const tokenId = parseTokenId(tokenIdValue);
+      toast('Sending NFT to burn address…');
+      await client.writeContract({
+        chain: sepolia,
+        account,
+        address: contractAddress as `0x${string}`,
+        abi: ERC721_ABI,
+        functionName: 'safeTransferFrom',
+        args: [account, DEAD_ADDRESS, tokenId],
+      });
+      toast.success('NFT removed from your wallet');
+      setHiddenWalletKeys(prev => new Set(prev).add(key));
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.shortMessage || e?.message || 'Burn failed');
+    } finally {
+      setBurningKeys(prev => {
+        const next = new Set(prev);
+        next.delete(key);
+        return next;
+      });
+    }
+  };
 
 
   return (
@@ -82,7 +193,17 @@ const getDisplayName = (nft: any) =>
         {/* NFT Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
           {filteredNFTs.map((nft) => (
-            <NFTCard key={nft.id} nft={nft} />
+            <div key={nft.id} className="relative group">
+              <NFTCard nft={nft} />
+              <button
+                aria-label="Delete NFT"
+                title="Delete from collection"
+                onClick={() => handleDeleteMock(nft.id)}
+                className="absolute top-2 right-2 z-10 inline-flex items-center justify-center h-8 w-8 rounded-md bg-black/60 hover:bg-black/80 text-white border border-white/20 transition"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
           ))}
         </div>
 
@@ -102,29 +223,42 @@ const getDisplayName = (nft: any) =>
               </div>
             ) : (
 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
-  {walletNfts.map((nft: any, i: number) => {
-    const key = `${nft?.contract?.address}-${nft?.tokenId}-${i}`;
-    const img = getAlchemyImage(nft);
-    const name = getDisplayName(nft);
-    const collection = nft?.contract?.name || nft?.contract?.address;
+  {walletNfts
+    .filter((nft: any, i: number) => {
+      const tokenIdValue = extractTokenId(nft);
+      const key = `${nft?.contract?.address}-${String(tokenIdValue)}-${i}`;
+      return !hiddenWalletKeys.has(key);
+    })
+    .map((nft: any, i: number) => {
+      const tokenIdValue = extractTokenId(nft);
+      const key = `${nft?.contract?.address}-${String(tokenIdValue)}-${i}`;
+      const img = getAlchemyImage(nft);
+      const name = getDisplayName(nft);
+      const collection = nft?.contract?.name || nft?.contract?.address;
 
-    return (
-      <div
-        key={key}
-        className="bg-gradient-card rounded-lg p-3 border border-border/50 hover:border-primary/50 transition-all duration-300"
-      >
-        <div className="w-full h-32 rounded mb-2 overflow-hidden bg-muted/40 flex items-center justify-center">
-          {img ? (
-            <img src={img} alt={name} className="w-full h-full object-cover" />
-          ) : (
-            <span className="text-xs text-muted-foreground">No Image</span>
-          )}
+      return (
+        <div key={key} className="relative bg-gradient-card rounded-lg p-3 border border-border/50 hover:border-primary/50 transition-all duration-300">
+          <button
+            aria-label="Burn NFT"
+            title="Burn (remove from wallet)"
+            onClick={() => handleBurnWalletNft(nft?.contract?.address, tokenIdValue, key)}
+            disabled={burningKeys.has(key)}
+            className="absolute top-2 right-2 z-10 inline-flex items-center justify-center h-8 w-8 rounded-md bg-red-600/80 hover:bg-red-700/90 disabled:opacity-60 text-white border border-white/20 transition"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+          <div className="w-full h-32 rounded mb-2 overflow-hidden bg-muted/40 flex items-center justify-center">
+            {img ? (
+              <img src={img} alt={name} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-xs text-muted-foreground">No Image</span>
+            )}
+          </div>
+          <div className="text-sm font-semibold text-foreground truncate">{name}</div>
+          <div className="text-xs text-muted-foreground truncate">{collection}</div>
         </div>
-        <div className="text-sm font-semibold text-foreground truncate">{name}</div>
-        <div className="text-xs text-muted-foreground truncate">{collection}</div>
-      </div>
-    );
-  })}
+      );
+    })}
 </div>
 
             )}

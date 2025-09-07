@@ -82,7 +82,7 @@ const DinoGame = () => {
 		const cactusImage = new Image();
 
 		// Public klasöründeki resimler
-		dinoImage.src = '/ouch.png';
+		dinoImage.src = '/dino.png';
 		cactusImage.src = '/cactus.png';
 
 		dinoImage.onload = () => {
