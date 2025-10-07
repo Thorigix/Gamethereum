@@ -102,3 +102,5 @@ script/Deploy.s.sol
 <hr>
 
 ##### Gamethereum is developed by the Cony team at ETHIstanbul Hackathon with ❤️,☕ and 🤖.
+
+##### This project awarded from ETHİstanbul prize pool. 💫
